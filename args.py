@@ -3,7 +3,7 @@ from utils import get_checkpoint_callback, LoggingCallback
 
 args_dict = dict(
     output_dir="", # path to save the checkpoints
-    filepath="",
+    dataset="",
     model_name_or_path='t5-small',
     tokenizer_name_or_path='t5-small',
     max_input_length=60,
@@ -34,8 +34,8 @@ args_dict = dict(
 
 
 def get_model_args():
-    args_dict.update({'output_dir': 't5_wikihow/', 'num_train_epochs': 30,
-                      'filepath': "",
+    args_dict.update({'output_dir': 'e2e_full/', 'num_train_epochs': 10,
+                      'dataset': "data/e2e_t5data_low.json",
                       'train_batch_size': 64, 'eval_batch_size': 64})
 
     args = argparse.Namespace(**args_dict)

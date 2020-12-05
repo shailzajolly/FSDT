@@ -1,6 +1,6 @@
 from nlp import Dataset as NlpDataset
 import json
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset 
 
 
 class D2tDataset(Dataset):
