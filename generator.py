@@ -1,4 +1,5 @@
 import time
+import glob
 
 import nltk
 nltk.download('punkt')
@@ -13,8 +14,6 @@ from nlp import load_metric
 from transformers import AdamW, T5ForConditionalGeneration, T5Tokenizer, get_linear_schedule_with_warmup
 
 from dataset import D2tDataset
-
-
 
 
 class T5FineTuner(pl.LightningModule):
@@ -59,6 +58,23 @@ class T5FineTuner(pl.LightningModule):
 
     def is_logger(self):
         return True  # self.trainer.proc_rank <= 0
+
+    def load_checkpoint(self, exp_dir):
+
+        ckpt_paths = glob.glob(exp_dir+"/*.ckpt")
+
+        best_ckpt = ""
+        best_score = 1e10
+        for ckpt in ckpt_paths:
+
+            score = list(torch.load(ckpt)['callbacks'].values())[0]['best_model_score']
+            if score < best_score:
+                best_score = score
+                best_ckpt = ckpt
+
+        self.model.load_state_dict({k[6:]: v for k, v in torch.load(best_ckpt)['state_dict'].items()})
+
+        print("Loaded model weights from: ", best_ckpt)
 
     def parse_score(self, result):
         return {k: round(v.mid.fmeasure * 100, 4) for k, v in result.items()}

@@ -67,3 +67,61 @@ class D2tDataset(Dataset):
         target_mask = targets["attention_mask"].squeeze()
 
         return {"source_ids": source_ids, "source_mask": src_mask, "target_ids": target_ids, "target_mask": target_mask}
+
+
+
+class T5HcDataset(Dataset):
+    def __init__(self, tokenizer, input_length, output_length):
+        self.input_length = input_length
+        self.tokenizer = tokenizer
+        self.output_length = output_length
+
+    def clean_text(self, text):
+        text = text.replace('Example of text:', '')
+        text = text.replace('Example of Summary:', '')
+        text = text.replace('\n' ,'')
+        text = text.replace('``', '')
+        text = text.replace('"', '')
+
+        return text
+
+
+    def convert_to_features(self, mr, ref):
+        # Tokenize contexts and questions (as pairs of inputs)
+
+        input_ = self.clean_text(mr)
+        target_ = self.clean_text(ref)
+
+        source = self.tokenizer.batch_encode_plus([input_], max_length=self.input_length,
+                                                  padding='max_length', truncation=True, return_tensors="pt")
+
+        targets = self.tokenizer.batch_encode_plus([target_], max_length=self.output_length,
+                                                   padding='max_length', truncation=True, return_tensors="pt")
+
+        return source, targets
+
+
+    def _getitem(self, mr, ref):
+        source, targets = self.convert_to_features(mr, ref)
+
+        source_ids = source["input_ids"  ]  # .squeeze()
+        target_ids = targets["input_ids"  ]  # .squeeze()
+
+        src_mask    = source["attention_mask"  ]  # .squeeze()
+        target_mask = targets["attention_mask"  ]  # .squeeze()
+
+        return {"source_ids": source_ids, "source_mask": src_mask, "target_ids": target_ids, "target_mask": target_mask}
+
+    def get_batch(self, mr, refs):
+        batch = {"source_ids": [],
+                 "source_mask": [],
+                 "target_ids": [],
+                 "target_mask": []}
+
+        for item in [self._getitem(mr, ref) for ref in refs]:
+            batch["source_ids"].append(item["source_ids"])
+            batch["source_mask"].append(item["source_mask"])
+            batch["target_ids"].append(item["target_ids"])
+            batch["target_mask"].append(item["target_mask"])
+
+        return {k: torch.cat(v, dim=0).cuda() for k, v in batch.items()}
