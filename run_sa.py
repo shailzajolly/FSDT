@@ -23,7 +23,7 @@ if __name__=="__main__":
 
 
 
-    data = json.load(open("", "r"))[:30]
+    data = json.load(open("data/4perc_mr_pseudoref.json", "r"))[:30]
     input_batch = list(zip(*data))
 
     simulated_annealing.run(input_batch)

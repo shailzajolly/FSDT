@@ -50,13 +50,16 @@ class SimulatedAnnealing:
         mr = input_batch[0]
         ref_org = input_batch[1]
 
+        print(len(mr))
+        print(len(ref_org))
+
         ref_old = input_batch[1]
         batch_size =  len(mr)
 
-        for t in range(self.max_setps):
+        for t in range(self.max_steps):
 
             T = max(self.t_init - self.C * t, 0)
-
+            
             ops = np.random.randint(0, 3, batch_size)
             positions = [random.randint(0,len(i.strip().split(" "))-1) for i in ref_old]
 

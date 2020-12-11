@@ -35,6 +35,7 @@ class T5FineTuner(pl.LightningModule):
             "test": self.hparams.n_test,
         }
         self.n_obs = {k: v if v >= 0 else None for k, v in n_observations_per_split.items()}
+        print("Generator built")
 
     def freeze_params(self, model):
         for par in model.parameters():

@@ -4,16 +4,19 @@ import numpy as np
 
 
 class RobertaEditor():
-    def __init__(self, model_dir="/Users/jolly/PycharmProjects/e2e-dataset/roberta-ft-mlm/"):
+    def __init__(self, model_dir="/root/dbox/NLG_mou/mlm_roberta10/"):
         self.model_dir = model_dir
         self.tokenizer = RobertaTokenizer.from_pretrained(self.model_dir)
         self.model = RobertaForMaskedLM.from_pretrained(self.model_dir, return_dict=True)
         self.ops_map = [self.insert, self.replace, self.delete]
+        print("Editor built")
 
     def edit(self, inputs, ops, positions):
 
         masked_inputs = np.array([self.ops_map[op](inp, position) for inp, op, position, in zip(inputs, ops, positions)])
         insert_and_replace_inputs = masked_inputs[np.where(ops<2)]
+        print(insert_and_replace_inputs)
+        exit()
         insert_and_replace_outputs = self.generate(insert_and_replace_inputs)
         masked_inputs[np.where(ops < 2)] = insert_and_replace_outputs
 

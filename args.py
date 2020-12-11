@@ -21,7 +21,7 @@ args_dict = dict(
     n_gpu=1,
     resume_from_checkpoint=None,
     val_check_interval = 1.0,
-    n_val=-1,
+    n_val=500,
     n_train=-1,
     n_test=-1,
     early_stop_callback=False,
@@ -65,9 +65,9 @@ def get_sa_args():
     args_dict = {
         "t_init": 3e-2,
         "C": 3e-4,
-        "fluecy_weight": 3,
+        "fluency_weight": 3,
         "semantic_weight": 8,
-        "max_steps": 100,
+        "max_steps": 20,
     }
 
     args = argparse.Namespace(**args_dict)
