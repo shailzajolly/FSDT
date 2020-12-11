@@ -1,6 +1,8 @@
 from nlp import Dataset as NlpDataset
 import json
-from torch.utils.data import Dataset 
+from torch.utils.data import Dataset
+
+import torch
 
 
 class D2tDataset(Dataset):
@@ -70,7 +72,7 @@ class D2tDataset(Dataset):
 
 
 
-class T5HcDataset(Dataset):
+class T5ScorerDataset(Dataset):
     def __init__(self, tokenizer, input_length, output_length):
         self.input_length = input_length
         self.tokenizer = tokenizer
@@ -112,13 +114,17 @@ class T5HcDataset(Dataset):
 
         return {"source_ids": source_ids, "source_mask": src_mask, "target_ids": target_ids, "target_mask": target_mask}
 
-    def get_batch(self, mr, refs):
+
+    def get_batch(self, mrs, refs):
         batch = {"source_ids": [],
                  "source_mask": [],
                  "target_ids": [],
                  "target_mask": []}
 
-        for item in [self._getitem(mr, ref) for ref in refs]:
+        if len(mrs)==1:
+            mrs = mrs * len(refs)
+
+        for item in [self._getitem(mr, ref) for mr, ref in zip(mrs,refs)]:
             batch["source_ids"].append(item["source_ids"])
             batch["source_mask"].append(item["source_mask"])
             batch["target_ids"].append(item["target_ids"])

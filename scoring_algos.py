@@ -1,9 +1,11 @@
 import torch
 import json
 import re
+import random
+import numpy as np
 
 from transformers import T5Tokenizer
-from dataset import T5HcDataset
+from dataset import T5ScorerDataset
 
 
 SLOTNAMES_GLOB = {'food', 'pricerange', 'eattype', 'near', 'name', 'familyfriendly', 'customer rating', 'area'}
@@ -16,6 +18,51 @@ RULES = {'food': "SV food",
          'familyfriendly': "SV family friendly",
          'customer rating': "SV customer rating",
          'area': "in SV area"}
+
+class SimulatedAnnealing:
+
+    def __init__(self, editor, generator, t_init, C, fluency_weight, semantic_weight, max_steps):
+
+        self.editor = editor
+        self.generator = generator
+        self.t_init = t_init
+        self.C = C
+        self.fluecy_weight = fluency_weight
+        self.semantic_weight = semantic_weight
+        self.max_steps = max_steps
+        self.t5_data_prep = T5ScorerDataset(self.generator.tokenizer, 60, 120)
+
+    def semantic_scorer(self, mr_embeds, ref_embeds):
+        return mr_embeds.mm(ref_embeds.T).max(dim=1).values.min()
+
+    def scorer(self, ref_new, ref_org, mr):
+
+        batch = self.t5_data_prep.get_batch(mr, ref_new)
+        fluency_scores = self.generator.fluency_score(batch)
+
+
+    def run(self, input_batch):
+
+        """
+        :param input_batch: tuple([mr], [ref])
+        :return:
+        """
+        mr = input_batch[0]
+        ref_org = input_batch[1]
+
+        ref_old = input_batch[1]
+        batch_size =  len(mr)
+
+        for t in range(self.max_setps):
+
+            T = max(self.t_init - self.C * t, 0)
+
+            ops = np.random.randint(0, 3, batch_size)
+            positions = [random.randint(0,len(i.strip().split(" "))-1) for i in ref_old]
+
+            ref_hat = self.editor.edit(ref_old, ops, positions)
+
+
 
 class HillClimbing:
 
@@ -40,8 +87,7 @@ class HillClimbing:
 
         mr_pseudoref = json.load(open(infile, 'r'))
 
-
-        t5_data_prep = T5HcDataset(self.tokenizer, 60, 120)
+        t5_data_prep = T5ScorerDataset(self.tokenizer, 60, 120)
         hill_climb_res = []
 
         for mr_ref in mr_pseudoref:

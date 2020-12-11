@@ -60,5 +60,19 @@ def get_train_args(args):
 
     return train_params
 
+def get_sa_args():
+
+    args_dict = {
+        "t_init": 3e-2,
+        "C": 3e-4,
+        "fluecy_weight": 3,
+        "semantic_weight": 8,
+        "max_steps": 100,
+    }
+
+    args = argparse.Namespace(**args_dict)
+    return args
+
+
 
 
