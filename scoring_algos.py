@@ -50,12 +50,9 @@ class SimulatedAnnealing:
         mr = input_batch[0]
         ref_org = input_batch[1]
 
-        print(len(mr))
-        print(len(ref_org))
-
         ref_old = input_batch[1]
         batch_size =  len(mr)
-
+        print(ref_old[:2])
         for t in range(self.max_steps):
 
             T = max(self.t_init - self.C * t, 0)
@@ -64,6 +61,7 @@ class SimulatedAnnealing:
             positions = [random.randint(0,len(i.strip().split(" "))-1) for i in ref_old]
 
             ref_hat = self.editor.edit(ref_old, ops, positions)
+            print(ref_hat[:2])
 
 
 
