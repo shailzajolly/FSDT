@@ -48,7 +48,7 @@ class RobertaEditor():
         return [self.tokenizer.decode(word_idx) for word_idx in torch.argmax(output_tensors.logits, dim=2).gather(1, mask_idxs).squeeze().cpu().numpy().tolist()]
 
     def get_contextual_word_embeddings(self, input_texts):
-        inputs = self.tokenizer(input_texts, return_tensors="pt")
+        inputs = self.tokenizer(input_texts, padding=True, return_tensors="pt")
         outputs = self.model(**inputs, output_hidden_states=True)
-        return outputs.hidden_states[-1].squeeze()[1:-1, :]
+        return outputs.hidden_states[-1][:,1:-1, :]
 

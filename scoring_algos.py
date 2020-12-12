@@ -27,19 +27,49 @@ class SimulatedAnnealing:
         self.generator = generator
         self.t_init = t_init
         self.C = C
-        self.fluecy_weight = fluency_weight
+        self.fluency_weight = fluency_weight
         self.semantic_weight = semantic_weight
         self.max_steps = max_steps
         self.t5_data_prep = T5ScorerDataset(self.generator.tokenizer, 60, 120)
 
-    def semantic_scorer(self, mr_embeds, ref_embeds):
-        return mr_embeds.mm(ref_embeds.T).max(dim=1).values.min()
+    def mr_to_keywords(self, mrs):
+        for mr in mrs:
+            slotvalues_reg = re.finditer(r'\[.*?\]', mr)  # takes out values between []
+            slotnames_reg = re.finditer(r'\w+\s*\w*?\[', mr)  # takes out names before [
 
-    def scorer(self, ref_new, ref_org, mr):
+            slotvalues = [v.group(0).strip('[]') for v in slotvalues_reg]
+            slotnames = [v.group(0).strip('[]') for v in slotnames_reg]
 
-        batch = self.t5_data_prep.get_batch(mr, ref_new)
+            keywords = []
+            for sn, sv in zip(slotnames, slotvalues):
+
+                if sv=="yes":
+                    sv = "family friendly"
+                elif sv in ['no', 'not']:
+                    sv = "not family friendly"
+
+                keywords.append(sv)
+
+            yield " ".join(keywords)
+
+    def semantic_scorer(self, mrs, refs):
+        mr_embeds = self.editor.get_contextual_word_embeddings(list(self.mr_to_keywords(mrs)))
+        ref_embeds = self.editor.get_contextual_word_embeddings(refs)
+
+        return mr_embeds.bmm(ref_embeds.permute(0,2,1)).max(dim=2).values.min(dim=1)
+
+    def scorer(self, ref_news, mrs):
+
+        batch = self.t5_data_prep.get_batch(mrs, ref_news)
         fluency_scores = self.generator.fluency_score(batch)
+        semantic_scores = self.semantic_scorer(mrs, ref_news)
+        total_scores = fluency_scores.pow(self.fluency_weight) * semantic_scores.pow(self.semantic_weight)
 
+        return total_scores
+
+    def acceptance_prob(self, ref_hats, ref_olds, mrs, T):
+        accept_hat = torch.exp(self.scorer(ref_hats, mrs) - self.scorer(ref_olds, mrs) / T)
+        return torch.clip(accept_hat, 0.0, 1.0).squeeze().cpu().numpy().tolist()
 
     def run(self, input_batch):
 
@@ -47,22 +77,25 @@ class SimulatedAnnealing:
         :param input_batch: tuple([mr], [ref])
         :return:
         """
-        mr = input_batch[0]
-        ref_org = input_batch[1]
+        mrs = input_batch[0]
+        ref_orgs = input_batch[1]
 
-        ref_old = input_batch[1]
-        batch_size =  len(mr)
-        print(ref_old[:2])
+        ref_olds = input_batch[1]
+        batch_size =  len(mrs)
         for t in range(self.max_steps):
-
             T = max(self.t_init - self.C * t, 0)
             
             ops = np.random.randint(0, 3, batch_size)
-            positions = [random.randint(0,len(i.strip().split(" "))-1) for i in ref_old]
+            positions = [random.randint(0,len(i.strip().split(" "))-1) for i in ref_olds]
 
-            ref_hat = self.editor.edit(ref_old, ops, positions)
-            print(ref_hat[:2])
+            ref_hats = self.editor.edit(ref_olds, ops, positions)
+            accept_probs = self.acceptance_prob(ref_hats, ref_olds, mrs)
 
+            for idx, accept_prob in enumerate(accept_probs):
+                if accept_prob==1.0:
+                    ref_olds[idx] = ref_hats[idx]
+
+        return ref_olds
 
 
 class HillClimbing:
@@ -98,7 +131,7 @@ class HillClimbing:
             ref = mr_ref[1].strip().lower()
 
             slotvalues_reg = re.finditer(r'\[.*?\]', mr)  # takes out values between []
-            slotnames_reg = re.finditer(r'\w+\s*\w*?\[', mr)  # takes out values between []
+            slotnames_reg = re.finditer(r'\w+\s*\w*?\[', mr)  # takes out names before [
 
             slotvalues = [v.group(0).strip('[]') for v in slotvalues_reg]
             slotnames = [v.group(0).strip('[]') for v in slotnames_reg]

@@ -1,4 +1,5 @@
 import json
+import math
 
 from scoring_algos import SimulatedAnnealing
 from editor import RobertaEditor
@@ -23,8 +24,17 @@ if __name__=="__main__":
 
 
 
-    data = json.load(open("data/4perc_mr_pseudoref.json", "r"))[:30]
-    input_batch = list(zip(*data))
+    data = json.load(open("data/4perc_mr_pseudoref.json", "r"))
 
-    simulated_annealing.run(input_batch)
+    batch_size = 32.0
+    num_batches = math.ceil(len(data)/batch_size)
+
+    sa_outputs = []
+
+    for i in range(num_batches):
+
+        batch_data = data[batch_size*i:batch_size*(i+1)]
+        input_batch = list(zip(*batch_data))
+        sa_outputs_batch = simulated_annealing.run(input_batch)
+        sa_outputs += sa_outputs_batch
     
