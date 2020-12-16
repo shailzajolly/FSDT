@@ -22,7 +22,7 @@ def test_t5(model_args, model):
 
     loader = model.test_dataloader()
 
-    fpred = open("test_output_viggo_5perc_25eps.txt", "w")
+    fpred = open("test_output_e2e_100perc_10eps.txt", "w")
     # pseudopar1_30epochs_1par.txt
     # test_output_30epochs_1par+1pseudopar.txt
 
@@ -52,6 +52,8 @@ if __name__=='__main__':
 
     model_args = get_model_args()
     trainer_args = get_train_args(model_args)
+
+    T5FineTuner.get_data_stats(model_args.dataset)
 
     model = T5FineTuner(model_args)
     print("Model Built")

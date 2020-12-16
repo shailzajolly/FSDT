@@ -259,3 +259,9 @@ class T5FineTuner(pl.LightningModule):
                                    output_length=self.hparams.max_output_length)
 
         return DataLoader(test_dataset, batch_size=self.hparams.eval_batch_size, num_workers=4)
+
+    def get_data_stats(self, filepath):
+
+        dataset = D2tDataset()
+        datastats = dataset.read_dataset()
+        print("Printing data Stats: ", datastats)

@@ -20,11 +20,62 @@ class D2tDataset(Dataset):
         dataset = {}
         raw_data = json.load(open(filepath))
 
+        '''
+        For different variants of data
+        '''
+        # raw_data1 = json.load(open('data/viggo_t5lower.json')) #wholeTrainingData
+        # raw_data = raw_data1 #To train on whole Training data
+
+        # raw_data["test"] = raw_data["train"][420:] #For generating pseudo samples for 4%
+        # raw_data['test'] = raw_data['train'][:420] #For generating pseudo samples for same 1%
+
+        # raw_data['train'] = raw_data['train'][:55] #For 1% few-shot experiment
+        # raw_data['test'] = raw_data1['train'] #For test on whole training data
+
+        # For using 1% training samples + 4% Hill-climb results
+        # hc_res = json.load(open('hill_climb_results_4perc.json','r'))
+        # raw_data['train'] = raw_data['train'][:420] + hc_res
+
+        # For using pseudo samples of 100% in training
+        # pseudopar100 = [line.strip() for line in open('pseudopar100_30epochs_1par.txt','r')]
+        # raw_data['train'] = raw_data['train'][:420] + raw_data1['train']
+
+        ##For using pseudo samples of 4% in training
+        # pseudopar4 = [line.strip() for line in open('pseudopar4_30epochs_1par.txt','r')]
+        # raw_data['train'] = raw_data['train']
+
+        ##For using same 1% pseudo samples in training
+        #     pseudopar1 = [line.strip() for line in open('pseudopar1_30epochs_1par.txt','r')]
+        #     raw_data['train'] = raw_data['train'][:420] + raw_data['train'][:420] + raw_data['train'][:420]
+
+        ##For using same 1% pseudo samples in training + v2 results
+        #     pseudopar1_v2 = [line.strip() for line in open('pseudopar1_30epochs_1parv2.txt','r')]
+
         for split in ['train', 'validation', 'test']:
             split_dict = {"mr": [], "ref": []}
             for idx, i in enumerate(raw_data[split]):
+                # To add pseudo-ref for 100 par
+                # if split=="train" and idx >= 420:
+                #     i["ref"] = pseudopar100[idx-420]
+
+                #To add pseudo-ref for 4 par
+                # if split=="train" and idx >= 420:
+                #     i["ref"] = pseudopar4[idx-420]
+
+                # To add pseudo-ref for same 1 par
+                # if split=="train" and 420<=idx<840:
+                #     i["ref"] = pseudopar1[idx-420]
+
+                # To add pseudo-ref for same 1 par v2
+                # if split=="train" and idx>=840:
+                #     i["ref"] = pseudopar1_v2[idx-840]
+
                 split_dict["mr"].append(i["mr"])
-                split_dict["ref"].append(i["ref"])
+                # split_dict["ref"].append(i["ref"]) #uncomment if next module not running
+                if split=="test":
+                    split_dict["ref"].append("ref")
+                else:
+                    split_dict["ref"].append(i["ref"])
 
             dataset[split] = NlpDataset.from_dict(split_dict)
 

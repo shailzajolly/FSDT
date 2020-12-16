@@ -4,8 +4,8 @@ from utils import get_checkpoint_callback, LoggingCallback
 args_dict = dict(
     output_dir="", # path to save the checkpoints
     dataset="",
-    model_name_or_path='t5-small',
-    tokenizer_name_or_path='t5-small',
+    model_name_or_path='t5-base',
+    tokenizer_name_or_path='t5-base',
     max_input_length=60,
     max_output_length=120,
     freeze_encoder=False,
