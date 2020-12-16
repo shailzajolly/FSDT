@@ -10,6 +10,9 @@ class D2tDataset(Dataset):
         self.dataset = self.read_dataset(filepath)[data_split]
         if num_samples:
             self.dataset = self.dataset.select(list(range(0, num_samples)))
+        print("Split: ",data_split)
+        print("Stats: ", self.dataset)
+
         self.input_length = input_length
         self.tokenizer = tokenizer
         self.output_length = output_length
@@ -29,7 +32,7 @@ class D2tDataset(Dataset):
         # raw_data["test"] = raw_data["train"][420:] #For generating pseudo samples for 4%
         # raw_data['test'] = raw_data['train'][:420] #For generating pseudo samples for same 1%
 
-        # raw_data['train'] = raw_data['train'][:55] #For 1% few-shot experiment
+        raw_data['train'] = raw_data['train'][:420] #For 1% few-shot experiment
         # raw_data['test'] = raw_data1['train'] #For test on whole training data
 
         # For using 1% training samples + 4% Hill-climb results

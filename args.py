@@ -21,7 +21,7 @@ args_dict = dict(
     n_gpu=1,
     resume_from_checkpoint=None,
     val_check_interval = 1.0,
-    n_val=500,
+    n_val=1000,
     n_train=-1,
     n_test=-1,
     early_stop_callback=False,
@@ -34,8 +34,8 @@ args_dict = dict(
 
 
 def get_model_args():
-    args_dict.update({'output_dir': 'e2e_full/', 'num_train_epochs': 10,
-                      'dataset': "data/e2e_t5data_low.json",
+    args_dict.update({'output_dir': 't5_ckpts/e2e_1par/', 'num_train_epochs': 30,
+                      'dataset': "data/e2e_t5data_fs_low.json",
                       'train_batch_size': 64, 'eval_batch_size': 64})
 
     args = argparse.Namespace(**args_dict)
