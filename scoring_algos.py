@@ -2,6 +2,7 @@ import torch
 import json
 import re
 import random
+import tqdm
 import numpy as np
 
 from transformers import T5Tokenizer
@@ -15,7 +16,7 @@ RULES = {'food': "SV food",
          'eattype': "SV",
          'near': "near SV",
          'name': "SV",
-         'familyfriendly': "SV family friendly",
+         'familyfriendly': "SV family-friendly",
          'customer rating': "SV customer rating",
          'area': "in SV area"}
 
@@ -44,9 +45,9 @@ class SimulatedAnnealing:
             for sn, sv in zip(slotnames, slotvalues):
 
                 if sv=="yes":
-                    sv = "family friendly"
+                    sv = "family-friendly"
                 elif sv in ['no', 'not']:
-                    sv = "not family friendly"
+                    sv = "not family-friendly"
 
                 keywords.append(sv)
 
@@ -56,7 +57,7 @@ class SimulatedAnnealing:
         mr_embeds = self.editor.get_contextual_word_embeddings(list(self.mr_to_keywords(mrs)))
         ref_embeds = self.editor.get_contextual_word_embeddings(refs)
 
-        return mr_embeds.bmm(ref_embeds.permute(0,2,1)).max(dim=2).values.min(dim=1)
+        return mr_embeds.bmm(ref_embeds.permute(0,2,1)).max(dim=2).values.min(dim=1).values
 
     def scorer(self, ref_news, mrs):
 
@@ -69,18 +70,18 @@ class SimulatedAnnealing:
 
     def acceptance_prob(self, ref_hats, ref_olds, mrs, T):
         accept_hat = torch.exp(self.scorer(ref_hats, mrs) - self.scorer(ref_olds, mrs) / T)
-        return torch.clip(accept_hat, 0.0, 1.0).squeeze().cpu().numpy().tolist()
+        return accept_hat.clamp(0.0, 1.0).squeeze().cpu().detach().numpy().tolist()
 
     def run(self, input_batch):
 
         """
-        :param input_batch: tuple([mr], [ref])
+        :param input_batch: List([mrs], [refs])
         :return:
         """
-        mrs = input_batch[0]
-        ref_orgs = input_batch[1]
+        mrs = list(input_batch[0])
+        ref_orgs = list(input_batch[1])
 
-        ref_olds = input_batch[1]
+        ref_olds = list(input_batch[1])
         batch_size =  len(mrs)
         for t in range(self.max_steps):
             T = max(self.t_init - self.C * t, 0)
@@ -89,7 +90,7 @@ class SimulatedAnnealing:
             positions = [random.randint(0,len(i.strip().split(" "))-1) for i in ref_olds]
 
             ref_hats = self.editor.edit(ref_olds, ops, positions)
-            accept_probs = self.acceptance_prob(ref_hats, ref_olds, mrs)
+            accept_probs = self.acceptance_prob(ref_hats.tolist(), ref_olds, mrs, T)
 
             for idx, accept_prob in enumerate(accept_probs):
                 if accept_prob==1.0:
@@ -124,7 +125,7 @@ class HillClimbing:
         t5_data_prep = T5ScorerDataset(self.tokenizer, 60, 120)
         hill_climb_res = []
 
-        for mr_ref in mr_pseudoref:
+        for mr_ref in tqdm.tqdm(mr_pseudoref):
             temp_dict = {}
 
             mr = mr_ref[0].strip().lower()
@@ -169,9 +170,6 @@ class HillClimbing:
             best_ref = ref
             for missing_slot in missing_slots:
                 best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep)
-                print(missing_slot)
-                print(best_ref)
-                print("----")
 
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
