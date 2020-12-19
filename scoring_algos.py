@@ -10,13 +10,14 @@ from dataset import T5ScorerDataset
 
 
 SLOTNAMES_GLOB = {'food', 'pricerange', 'eattype', 'near', 'name', 'familyfriendly', 'customer rating', 'area'}
+FF_TYPES = ["kid", "family", "child"]
 RULES = {'food': "SV food",
          'pricerange_num': "price range SV",
          'pricerange_nonnum': "SV price range",
          'eattype': "SV",
          'near': "near SV",
          'name': "SV",
-         'familyfriendly': "SV family-friendly",
+         'familyfriendly': "SV family friendly",
          'customer rating': "SV customer rating",
          'area': "in SV area"}
 
@@ -141,7 +142,6 @@ class HillClimbing:
             coverage = 0
 
             for sn, sv in zip(slotnames, slotvalues):
-
                 if sv in ['yes', 'no', 'not']:
                     org_sv = sv
                     sv = 'friendly'
@@ -158,9 +158,10 @@ class HillClimbing:
                             sv = RULES["pricerange_nonnum"].replace("SV", sv)
                     elif sn == "familyfriendly":
                         if org_sv in ['no' or 'not']:
-                            sv = RULES["familyfriendly"].replace("SV", "not")
+                            sv = RULES["familyfriendly"].strip().replace("SV", "not")
                         else:
-                            sv = RULES["familyfriendly"].replace("SV ", "")
+                            sv = RULES["familyfriendly"].strip().replace("SV ", "")
+                        sv  = "It is " + sv.replace("family", random.sample(FF_TYPES, 1)[0]) +  "."
                     else:
                         sv = RULES[sn].replace("SV", sv)
 
@@ -169,7 +170,10 @@ class HillClimbing:
 
             best_ref = ref
             for missing_slot in missing_slots:
-                best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep)
+                if "friendly" in missing_slot:
+                    best_ref = best_ref + " " + missing_slot
+                else:
+                    best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep)
 
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
