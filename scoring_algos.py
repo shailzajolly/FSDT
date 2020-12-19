@@ -161,7 +161,7 @@ class HillClimbing:
                             sv = RULES["familyfriendly"].strip().replace("SV", "not")
                         else:
                             sv = RULES["familyfriendly"].strip().replace("SV ", "")
-                        sv  = "It is " + sv.replace("family", random.sample(FF_TYPES, 1)[0]) +  "."
+                        sv  = "it is " + sv.replace("family", random.sample(FF_TYPES, 1)[0]) +  "."
                     else:
                         sv = RULES[sn].replace("SV", sv)
 
