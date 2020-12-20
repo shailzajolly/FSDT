@@ -119,9 +119,21 @@ class HillClimbing:
         outs = self.model.fluency_score(batch)
         return hypothesis[torch.max(outs, 0)[1].cpu().item()]
 
-    def adding_missing_slotvalues(self, infile, outfile):
+    def create_hillclimbing_data(self, mr_file, psd_ref_file):
+        mr_refs = json.load(open(mr_file, 'r'))["train"][420:]
+        psd_refs = open(psd_ref_file, 'r')
 
-        mr_pseudoref = json.load(open(infile, 'r'))
+        mr_psd_ref = []
+        for mr_ref, psd_ref in zip(mr_refs, psd_refs):
+            temp_mr = mr_ref["mr"].lower()
+            temp_psd_ref = psd_ref.strip().lower()
+            mr_psd_ref.append([temp_mr, temp_psd_ref])
+
+        return mr_psd_ref
+
+    def adding_missing_slotvalues(self, mr_file, ref_file, outfile):
+
+        mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file)
 
         t5_data_prep = T5ScorerDataset(self.tokenizer, 60, 120)
         hill_climb_res = []
@@ -179,4 +191,4 @@ class HillClimbing:
             hill_climb_res.append(temp_dict)
         json.dump(hill_climb_res, open(outfile, 'w+'))
 
-        print("Hill climb results dumped!!")
+        print("Hill climb results written!")

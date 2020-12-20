@@ -227,7 +227,11 @@ class T5FineTuner(pl.LightningModule):
 
     def train_dataloader(self):
         n_samples = self.n_obs['train']
-        train_dataset = D2tDataset(tokenizer=self.tokenizer, filepath=self.hparams.dataset, data_split="train",
+        train_dataset = D2tDataset(tokenizer=self.tokenizer,
+                                   filepath=self.hparams.dataset,
+                                   augment_data_filepath=self.hparams.augment_data_filepath,
+                                   data_variant=self.hparams.data_variant,
+                                   data_split="train",
                                    num_samples=n_samples, input_length=self.hparams.max_input_length,
                                    output_length=self.hparams.max_output_length)
 
@@ -246,16 +250,25 @@ class T5FineTuner(pl.LightningModule):
 
     def val_dataloader(self):
         n_samples = self.n_obs['validation']
-        validation_dataset = D2tDataset(tokenizer=self.tokenizer, filepath=self.hparams.dataset, data_split="validation",
-                                   num_samples=n_samples, input_length=self.hparams.max_input_length,
-                                   output_length=self.hparams.max_output_length)
+        validation_dataset = D2tDataset(tokenizer=self.tokenizer,
+                                        filepath=self.hparams.dataset,
+                                        augment_data_filepath=self.hparams.augment_data_filepath,
+                                        data_variant=self.hparams.data_variant,
+                                        data_split="validation",
+                                        num_samples=n_samples, input_length=self.hparams.max_input_length,
+                                        output_length=self.hparams.max_output_length)
         
         return DataLoader(validation_dataset, batch_size=self.hparams.eval_batch_size, num_workers=4)
 
     def test_dataloader(self):
         n_samples = self.n_obs['test']
-        test_dataset = D2tDataset(tokenizer=self.tokenizer, filepath=self.hparams.dataset, data_split="test",
-                                   num_samples=n_samples, input_length=self.hparams.max_input_length,
-                                   output_length=self.hparams.max_output_length)
+        test_dataset = D2tDataset(tokenizer=self.tokenizer,
+                                  filepath=self.hparams.dataset,
+                                  augment_data_filepath=self.hparams.augment_data_filepath,
+                                  data_variant=self.hparams.data_variant,
+                                  data_split="test",
+                                  num_samples=n_samples, input_length=self.hparams.max_input_length,
+                                  output_length=self.hparams.max_output_length)
+
         return DataLoader(test_dataset, batch_size=self.hparams.eval_batch_size, num_workers=4)
 
