@@ -7,7 +7,8 @@ import torch
 
 class D2tDataset(Dataset):
     def __init__(self, tokenizer, filepath, augment_data_filepath, data_variant, data_split, num_samples, input_length, output_length, print_text=False):
-        self.dataset = self.read_dataset(filepath)[data_split]
+
+        self.dataset = self.read_dataset(filepath, augment_data_filepath, data_variant)[data_split]
         if num_samples:
             self.dataset = self.dataset.select(list(range(0, num_samples)))
         print("Split: ",data_split)
@@ -17,10 +18,8 @@ class D2tDataset(Dataset):
         self.tokenizer = tokenizer
         self.output_length = output_length
         self.print_text = print_text
-        self.data_variant = data_variant
-        self.augment_data_filepath = augment_data_filepath
 
-    def read_dataset(self, filepath):
+    def read_dataset(self, filepath, augment_data_filepath, data_variant):
 
         dataset = {}
         raw_data = json.load(open(filepath))
@@ -29,14 +28,14 @@ class D2tDataset(Dataset):
         #For different variants of data
 
         augment_data = None
-        if self.data_variant=="1par":
+        if data_variant=="1par":
             raw_data['train'] = raw_data['train'][:420]
-        elif self.data_variant=="gen_psd_4par":
+        elif data_variant=="gen_psd_4par":
             raw_data["test"] = raw_data["train"][420:]
-        elif self.data_variant=="1par_4psd":
-            augment_data = [line.strip() for line in open(self.augment_data_filepath, 'r')]
-        elif self.data_variant=="1par_4psd_hc":
-            augment_data = json.load(open(self.augment_data_filepath, 'r'))
+        elif data_variant=="1par_4psd":
+            augment_data = [line.strip() for line in open(augment_data_filepath, 'r')]
+        elif data_variant=="1par_4psd_hc":
+            augment_data = json.load(open(augment_data_filepath, 'r'))
             raw_data['train'] = raw_data['train'][:420] + augment_data
 
         for split in ['train', 'validation', 'test']:
@@ -44,7 +43,7 @@ class D2tDataset(Dataset):
             for idx, i in enumerate(raw_data[split]):
 
                 #To add pseudo-ref for 4 par
-                if self.data_variant=="1par_4psd" and augment_data:
+                if data_variant=="1par_4psd" and augment_data:
                     if split=="train" and idx >= 420:
                         i["ref"] = augment_data[idx-420]
 

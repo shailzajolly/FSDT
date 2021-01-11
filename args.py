@@ -23,7 +23,7 @@ def get_model_args():
     parser.add_argument('--data_variant', type=str, default="",
                         help='Data augmentation experiments. Possible inputs: 1par, gen_psd_4par, 1par_4psd, 1par_4psd_hc')
 
-    parser.add_argument('--is_train', type=bool, default=True,
+    parser.add_argument('--is_train', action="store_true",
                         help='Trains the model if True. Puts model in eval mode if False ')
 
     parser.add_argument('--num_train_epochs', type=int, default=10,
@@ -103,8 +103,6 @@ def get_model_args():
                         help='Seed for random number generator')
 
     args, unparsed = parser.parse_known_args()
-    if len(unparsed) != 0:
-        raise NameError("Argument {} not recognized".format(unparsed))
     return args
 
 def get_train_args(args):
@@ -151,6 +149,7 @@ def get_hc_args():
     parser.add_argument('--output_file_hc', type=str, default="4perc_mr_pseudoref_HC.json",
                         help='Output file for Hill Climb file.')
 
-
+    args, unparsed = parser.parse_known_args()
+    return args
 
 

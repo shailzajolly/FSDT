@@ -1,5 +1,6 @@
 import json
 import math
+import time
 
 from scoring_algos import HillClimbing
 from generator import T5FineTuner
@@ -17,6 +18,10 @@ if __name__=="__main__":
     print("Model Built")
     generator.cuda()
     
+    start_time = time.time()    
+
     hill_climb = HillClimbing(generator)
     hill_climb.adding_missing_slotvalues(hc_args.input_mr_ref, hc_args.input_psd_ref, hc_args.output_file_hc)
-
+    
+    end_time = time.time()
+    print(f"Time elapsed in seconds {end_time-start_time}")
