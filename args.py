@@ -21,7 +21,10 @@ def get_model_args():
                         help='Augment data generated from hill climbing or pseudo parallel samples')
 
     parser.add_argument('--data_variant', type=str, default="",
-                        help='Data augmentation experiments. Possible inputs: 1par, gen_psd_4par, 1par_4psd, 1par_4psd_hc')
+                        help='Data augmentation experiments. Possible inputs: gen_psd_4par, 1par_4psd, 1par_4psd_hc')
+
+    parser.add_argument('--data_variant_samples', type=int, default=100,
+                        help='Number of samples for data augmentation experiments.')
 
     parser.add_argument('--is_train', action="store_true",
                         help='Trains the model if True. Puts model in eval mode if False ')
@@ -152,8 +155,8 @@ def get_hc_args():
     parser.add_argument('--hc_dataset', type=str, default="e2e",
                         help='HC is dataset specific, possible options: e2e, wikibio')
 
-    parser.add_argument('--num_samples', type=int, default="420",
-                        help='Number of samples to choose resepctive mrs to make data for HC')
+    parser.add_argument('--hc_num_samples', type=int, default="100",
+                        help='Number of samples to choose respective mrs to make data for HC')
 
     args, unparsed = parser.parse_known_args()
     return args

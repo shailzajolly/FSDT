@@ -44,7 +44,8 @@ class SimulatedAnnealing:
         self.fluency_weight = fluency_weight
         self.semantic_weight = semantic_weight
         self.max_steps = max_steps
-        self.t5_data_prep = T5ScorerDataset(self.generator.tokenizer, 60, 120)
+        self.t5_data_prep = T5ScorerDataset(self.generator.tokenizer, generator.hparams.max_input_length,
+                                            generator.hparams.max_output_length)
 
     def mr_to_keywords(self, mrs):
         for mr in mrs:
@@ -117,29 +118,31 @@ class HillClimbing:
     def __init__(self, model):
         self.model = model
         self.tokenizer = model.tokenizer
+        self.input_length = model.hparams.max_input_length
+        self.output_length = model.hparams.max_output_length
 
     def hasNumbers(self, inputString):
         return bool(re.search(r'\d', inputString))
 
-    def insert_missingslot(self, mr, ref, missing_slot, t5_data_prep):
+    def insert_missingslot(self, mr, ref, missing_slot, t5_data_prep, batch_size=20):
         hypothesis = []
         hypothesis_scores = []
         tokens = ref.split()
         for i in range(len(tokens)):
             hypothesis.append(" ".join(tokens[:i] + [missing_slot] + tokens[i:]))
 
-        for start_idx in range(0, len(hypothesis), 20):
+        for start_idx in range(0, len(hypothesis), batch_size):
 
-            hypo_batch = hypothesis[start_idx:start_idx+20]
+            hypo_batch = hypothesis[start_idx:start_idx+batch_size]
             batch = t5_data_prep.get_batch(mr, hypo_batch)
             outs = self.model.fluency_score(batch)
             hypothesis_scores += outs.cpu().detach().numpy().tolist()
 
         return hypothesis[np.argmax(hypothesis_scores)]
 
-    def create_hillclimbing_data(self, mr_file, psd_ref_file, num_of_samps):
+    def create_hillclimbing_data(self, mr_file, psd_ref_file, num_samples):
 
-        mr_refs = json.load(open(mr_file, 'r'))["train"][num_of_samps:]
+        mr_refs = json.load(open(mr_file, 'r'))["train"][num_samples:]
         #mr_refs = json.load(open(mr_file, 'r'))["test"] #for search in inference
         psd_refs = open(psd_ref_file, 'r')
 
@@ -163,7 +166,7 @@ class HillClimbing:
         search_inference = open(outfile, 'w+')
         mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file, num_samples)
 
-        t5_data_prep = T5ScorerDataset(self.tokenizer, 60, 120)
+        t5_data_prep = T5ScorerDataset(self.tokenizer, self.input_length, self.output_length)
         hill_climb_res = []
 
         for mr_ref in tqdm.tqdm(mr_pseudoref):
@@ -213,7 +216,7 @@ class HillClimbing:
                 if "friendly" in missing_slot:
                     best_ref = best_ref + " " + missing_slot
                 else:
-                    best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep)
+                    best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep, batch_size=64)
 
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
@@ -228,7 +231,7 @@ class HillClimbing:
 
         #search_inference = open(outfile, 'w+')
         mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file, num_samples)
-        t5_data_prep = T5ScorerDataset(self.tokenizer, 300, 180)
+        t5_data_prep = T5ScorerDataset(self.tokenizer, self.input_length, self.output_length)
 
         hill_climb_res = []
 
@@ -258,9 +261,6 @@ class HillClimbing:
 
             bd_counter = 0
             bd_vals = []
-
-            dd_counter = 0
-            dd_vals = []
 
             for sn, sv in zip(slotnames, slotvalues):
 

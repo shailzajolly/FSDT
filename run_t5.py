@@ -32,8 +32,8 @@ def test_t5(model_args, model):
             attention_mask=batch["source_mask"].cuda(),
             use_cache=True,
             decoder_attention_mask=batch['target_mask'].cuda(),
-            max_length=120, #80
-            num_beams=2, #5
+            max_length=model_args.max_output_length,
+            num_beams=2,
             repetition_penalty=2.5,
             length_penalty=1.0,
             early_stopping=True
