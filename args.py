@@ -152,7 +152,7 @@ def get_hc_args():
     parser.add_argument('--hc_dataset', type=str, default="e2e",
                         help='HC is dataset specific, possible options: e2e, wikibio')
 
-    parser.add_argument('--num_samples', type=str, default="420",
+    parser.add_argument('--num_samples', type=int, default="420",
                         help='Number of samples to choose resepctive mrs to make data for HC')
 
     args, unparsed = parser.parse_known_args()

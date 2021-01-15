@@ -123,17 +123,23 @@ class HillClimbing:
 
     def insert_missingslot(self, mr, ref, missing_slot, t5_data_prep):
         hypothesis = []
+        hypothesis_scores = []
         tokens = ref.split()
         for i in range(len(tokens)):
             hypothesis.append(" ".join(tokens[:i] + [missing_slot] + tokens[i:]))
 
-        batch = t5_data_prep.get_batch(mr, hypothesis)
-        outs = self.model.fluency_score(batch)
-        return hypothesis[torch.max(outs, 0)[1].cpu().item()]
+        for start_idx in range(0, len(hypothesis), 20):
+
+            hypo_batch = hypothesis[start_idx:start_idx+20]
+            batch = t5_data_prep.get_batch(mr, hypo_batch)
+            outs = self.model.fluency_score(batch)
+            hypothesis_scores += outs.cpu().detach().numpy().tolist()
+
+        return hypothesis[np.argmax(hypothesis_scores)]
 
     def create_hillclimbing_data(self, mr_file, psd_ref_file, num_of_samps):
 
-        mr_refs = json.load(open(mr_file, 'r'))["train"][num_of_samps:] #num_of_samps=420 for e2e, 400 for WB
+        mr_refs = json.load(open(mr_file, 'r'))["train"][num_of_samps:]
         #mr_refs = json.load(open(mr_file, 'r'))["test"] #for search in inference
         psd_refs = open(psd_ref_file, 'r')
 
@@ -218,11 +224,11 @@ class HillClimbing:
 
         print("Hill climb results written!")
 
-    def adding_missing_slotvalues_wb(self, mr_file, ref_file, outfile, num_samples=40):
+    def adding_missing_slotvalues_wb(self, mr_file, ref_file, outfile, num_samples=100):
 
         #search_inference = open(outfile, 'w+')
         mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file, num_samples)
-        t5_data_prep = T5ScorerDataset(self.tokenizer, 60, 120)
+        t5_data_prep = T5ScorerDataset(self.tokenizer, 300, 180)
 
         hill_climb_res = []
 
@@ -308,17 +314,20 @@ class HillClimbing:
                                 sv = RULESWB[sn].replace("SV", " ".join(bd_vals))
 
                         else:
-                            sv = RULES[sn].replace("SV", sv)
+                            sv = RULESWB[sn].replace("SV", sv)
 
-                    missing_slots.append(sv)
+                        missing_slots.append(sv)
 
             temp_dict["mr"] = mr
             best_ref = ref
+            print(mr)
+            print(ref)
 
             for missing_slot in missing_slots:
-
                 best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep)
 
+            print("best_ref:", best_ref)
+            print("-----------------------")
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
             #search_inference.write(best_ref+"\n")

@@ -126,7 +126,7 @@ class T5FineTuner(pl.LightningModule):
         lm_logits = outputs[1]
         loss_fct = CrossEntropyLoss(ignore_index=-100, reduction='none')  # give CE loss at each word generation step
         loss = loss_fct(lm_logits.view(-1, lm_logits.size(-1)), lm_labels.view(-1))
-        prob_products_per_sample = torch.exp(-1 * loss.reshape(-1, 120).sum(dim=1))
+        prob_products_per_sample = torch.exp(-1 * loss.reshape(-1, self.hparams.max_output_length).sum(dim=1))
 
         return prob_products_per_sample
 
@@ -139,7 +139,7 @@ class T5FineTuner(pl.LightningModule):
             attention_mask=batch["source_mask"],
             use_cache=True,
             decoder_attention_mask=batch['target_mask'],
-            max_length=150,
+            max_length=self.hparams.max_output_length,
             num_beams=2,
             repetition_penalty=2.5,
             length_penalty=1.0,

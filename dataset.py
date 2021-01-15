@@ -31,12 +31,12 @@ class D2tDataset(Dataset):
         if data_variant=="1par":
             raw_data['train'] = raw_data['train'][:420]
         elif data_variant=="gen_psd_4par":
-            raw_data["test"] = raw_data["train"][420:]
+            raw_data["test"] = raw_data["train"][100:] #420
         elif data_variant=="1par_4psd":
             augment_data = [line.strip() for line in open(augment_data_filepath, 'r')]
         elif data_variant=="1par_4psd_hc":
             augment_data = json.load(open(augment_data_filepath, 'r'))
-            raw_data['train'] = raw_data['train'][:420] + augment_data
+            raw_data['train'] = raw_data['train'][:100] + augment_data #420
 
         for split in ['train', 'validation', 'test']:
             split_dict = {"mr": [], "ref": []}
@@ -44,8 +44,8 @@ class D2tDataset(Dataset):
 
                 #To add pseudo-ref for 4 par
                 if data_variant=="1par_4psd" and augment_data:
-                    if split=="train" and idx >= 420:
-                        i["ref"] = augment_data[idx-420]
+                    if split=="train" and idx >= 100:
+                        i["ref"] = augment_data[idx-100]
 
                 split_dict["mr"].append(i["mr"])
                 # split_dict["ref"].append(i["ref"]) #uncomment if next module not running
