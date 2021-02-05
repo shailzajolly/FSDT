@@ -23,14 +23,15 @@ RULES = {'food': "SV food",
 
 SLOTNAMES_GLOB_wb = {'fullname', 'birth date', 'currentclub', 'nationality', 'occupation', 'position', 'death date', 'party', 'birth place'}
 RULESWB = {'fullname': "SV",
-         'birth date': "born on SV",
-         'currentclub': "plays for SV",
+         'birth date': "born on SV", #born on
+         'currentclub': "plays for SV", #plays for
          'nationality': "SV",
-         'occupation': "is a SV",
+         'occupation': "is a SV", #is a
          'position': "SV",
-         'death date': "died on SV",
-         'party': "serving in SV party",
-         'birth place': "born in SV"}
+         'death date 1': "died on SV", #died on
+         'death date 2': "died in SV", #died on
+         'party': "serving in SV party", #serving in SV party
+         'birth place': "born in SV"}#born in
 
 
 class SimulatedAnnealing:
@@ -138,12 +139,13 @@ class HillClimbing:
             outs = self.model.fluency_score(batch)
             hypothesis_scores += outs.cpu().detach().numpy().tolist()
 
-        return hypothesis[np.argmax(hypothesis_scores)]
+        #return hypothesis[np.random.choice(np.argsort(hypothesis_scores)[-3:], 1)[0]] #For WikiBio we did to have random sampling in HC
+        return hypothesis[np.argsort(hypothesis_scores)[-1]] #For e2e exps
 
     def create_hillclimbing_data(self, mr_file, psd_ref_file, num_samples):
-
-        mr_refs = json.load(open(mr_file, 'r'))["train"][num_samples:]
-        #mr_refs = json.load(open(mr_file, 'r'))["test"] #for search in inference
+        
+        #mr_refs = json.load(open(mr_file, 'r'))["train"][num_samples:]
+        mr_refs = json.load(open(mr_file, 'r'))["test"] #for search in inference
         psd_refs = open(psd_ref_file, 'r')
 
         mr_psd_ref = []
@@ -165,7 +167,6 @@ class HillClimbing:
 
         search_inference = open(outfile, 'w+')
         mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file, num_samples)
-
         t5_data_prep = T5ScorerDataset(self.tokenizer, self.input_length, self.output_length)
         hill_climb_res = []
 
@@ -173,7 +174,7 @@ class HillClimbing:
             temp_dict = {}
 
             mr = mr_ref[0].strip().lower()
-            ref = mr_ref[1].strip().lower()
+            ref = mr_ref[1].strip().strip(".").lower()
 
             slotvalues_reg = re.finditer(r'\[.*?\]', mr)  # takes out values between []
             slotnames_reg = re.finditer(r'\w+\s*\w*?\[', mr)  # takes out names before [
@@ -203,8 +204,8 @@ class HillClimbing:
                         if org_sv in ['no' or 'not']:
                             sv = RULES["familyfriendly"].strip().replace("SV", "not")
                         else:
-                            sv = RULES["familyfriendly"].strip().replace("SV ", "")
-                        sv  = "it is " + sv.replace("family", random.sample(FF_TYPES, 1)[0]) +  "."
+                            sv = RULES["familyfriendly"].strip().replace("SV", "")
+                        #sv  = "it is " + sv.replace("family", random.sample(FF_TYPES, 1)[0]) +  "." #boolean constraint
                     else:
                         sv = RULES[sn].replace("SV", sv)
 
@@ -213,10 +214,10 @@ class HillClimbing:
 
             best_ref = ref
             for missing_slot in missing_slots:
-                if "friendly" in missing_slot:
-                    best_ref = best_ref + " " + missing_slot
-                else:
-                    best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep, batch_size=64)
+                #if "friendly" in missing_slot:
+                    #best_ref = best_ref + " " + missing_slot
+                #else:
+                best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep, batch_size=64)
 
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
@@ -229,7 +230,7 @@ class HillClimbing:
 
     def adding_missing_slotvalues_wb(self, mr_file, ref_file, outfile, num_samples=100):
 
-        #search_inference = open(outfile, 'w+')
+        search_inference = open(outfile, 'w+')
         mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file, num_samples)
         t5_data_prep = T5ScorerDataset(self.tokenizer, self.input_length, self.output_length)
 
@@ -240,7 +241,7 @@ class HillClimbing:
             temp_dict = {}
 
             mr = mr_ref[0].strip().lower()
-            ref = mr_ref[1].strip().lower()
+            ref = mr_ref[1].strip().strip(".").lower() + " ."
 
             slotvalues_reg = re.finditer(r'\[.*?\]', mr)  # takes out values between []
             slotnames_reg = re.finditer(r'\w+\s*\w*?\[', mr)  # takes out names before [
@@ -262,6 +263,12 @@ class HillClimbing:
             bd_counter = 0
             bd_vals = []
 
+            bp_counter = 0
+            bp_vals = []
+
+            dd_counter = 0
+            dd_vals = []
+
             for sn, sv in zip(slotnames, slotvalues):
 
                 if sv in ref:
@@ -270,7 +277,10 @@ class HillClimbing:
                     if sn in SLOTNAMES_GLOB_wb:
 
                         if sn == "occupation":
-                            split_svs = sv.split(",")
+                            if "," in sv:
+                                split_svs = map(str.strip, sv.split(","))
+                            else:
+                                split_svs = map(str.strip, sv.split(" "))
                             for split_sv in split_svs:
                                 if split_sv in ref:
                                     occupation_counter+=1
@@ -279,9 +289,25 @@ class HillClimbing:
 
                             if occupation_counter == 0:
                                 sv = RULESWB[sn].replace("SV", " ".join(occupation_vals))
+                                missing_slots.append(sv)
+                        
+                        elif sn == "birth place":
+                            split_svs = map(str.strip, sv.split(","))
+                            for split_sv in split_svs:
+                                if split_sv in ref:
+                                    bp_counter+=1
+                                else:
+                                    bp_vals.append(split_sv)
 
+                            if bp_counter == 0:
+                                sv = RULESWB[sn].replace("SV", " ".join(bp_vals))
+                                missing_slots.append(sv)
+                        
                         elif sn == "position":
-                            split_svs = sv.split("/")
+                            if "/" in sv:
+                                split_svs = map(str.strip, sv.split("/"))
+                            else:
+                                split_svs = map(str.strip, sv.split(" "))
                             for split_sv in split_svs:
                                 if split_sv in ref:
                                     position_counter+=1
@@ -290,9 +316,10 @@ class HillClimbing:
 
                             if position_counter == 0:
                                 sv = RULESWB[sn].replace("SV", " ".join(position_vals))
+                                missing_slots.append(sv)
 
                         elif sn == "fullname":
-                            split_svs = sv.split(" ")
+                            split_svs = map(str.strip, sv.split(" "))
                             for split_sv in split_svs:
                                 if split_sv in ref:
                                     name_counter+=1
@@ -301,9 +328,10 @@ class HillClimbing:
 
                             if name_counter == 0:
                                 sv = RULESWB[sn].replace("SV", " ".join(name_vals))
+                                missing_slots.append(sv)
 
                         elif sn == "birth date":
-                            split_svs = sv.split(" ")
+                            split_svs = map(str.strip, sv.split(" "))
                             for split_sv in split_svs:
                                 if split_sv in ref:
                                     bd_counter+=1
@@ -312,27 +340,48 @@ class HillClimbing:
 
                             if bd_counter == 0:
                                 sv = RULESWB[sn].replace("SV", " ".join(bd_vals))
+                                missing_slots.append(sv)
+
+                        elif sn == "death date":
+                            split_svs = list(map(str.strip, sv.split(" ")))
+                            for split_sv in split_svs:
+                                if split_sv in ref:
+                                    dd_counter+=1
+                                else:
+                                    dd_vals.append(split_sv)
+
+                            if dd_counter == 0:
+                                if len(split_svs) > 2:
+                                    sv = RULESWB[sn+" 1"].replace("SV", " ".join(dd_vals))
+                                else:
+                                    sv = RULESWB[sn+" 2"].replace("SV", " ".join(dd_vals))
+                                missing_slots.append(sv)
 
                         else:
                             sv = RULESWB[sn].replace("SV", sv)
-
-                        missing_slots.append(sv)
+                            missing_slots.append(sv)
+        
 
             temp_dict["mr"] = mr
             best_ref = ref
-            print(mr)
-            print(ref)
 
             for missing_slot in missing_slots:
-                best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep)
+                best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep, 10)
 
-            print("best_ref:", best_ref)
-            print("-----------------------")
+            if False and len(missing_slots)!=0:
+                print(mr)
+                print(ref)
+                print(missing_slots)
+                print("best_ref:", best_ref)
+                print("-----------------------")
+                input()
+
+
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
-            #search_inference.write(best_ref+"\n")
+            search_inference.write(best_ref+"\n")
 
-        json.dump(hill_climb_res, open(outfile, 'w+'))
-        #search_inference.close()
+        #json.dump(hill_climb_res, open(outfile, 'w+'))
+        search_inference.close()
 
         print("Hill climb results written!")
