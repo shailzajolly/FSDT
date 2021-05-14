@@ -144,8 +144,8 @@ class HillClimbing:
 
     def create_hillclimbing_data(self, mr_file, psd_ref_file, num_samples):
         
-        #mr_refs = json.load(open(mr_file, 'r'))["train"][num_samples:]
-        mr_refs = json.load(open(mr_file, 'r'))["test"] #for search in inference
+        mr_refs = json.load(open(mr_file, 'r'))["train"][num_samples:]
+        #mr_refs = json.load(open(mr_file, 'r'))["test"] #for search in inference
         psd_refs = open(psd_ref_file, 'r')
 
         mr_psd_ref = []
@@ -165,7 +165,7 @@ class HillClimbing:
 
     def adding_missing_slotvalues_e2e(self, mr_file, ref_file, outfile, num_samples=420):
 
-        search_inference = open(outfile, 'w+')
+        #search_inference = open(outfile, 'w+')
         mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file, num_samples)
         t5_data_prep = T5ScorerDataset(self.tokenizer, self.input_length, self.output_length)
         hill_climb_res = []
@@ -215,7 +215,7 @@ class HillClimbing:
             best_ref = ref
             for missing_slot in missing_slots:
                 #if "friendly" in missing_slot:
-                    #best_ref = best_ref + " " + missing_slot
+                    #best_ref = best_ref + " " + missing_slot #Bool-constraint
                 #else:
                 best_ref = self.insert_missingslot(mr, best_ref, missing_slot, t5_data_prep, batch_size=64)
 
@@ -223,14 +223,14 @@ class HillClimbing:
             hill_climb_res.append(temp_dict)
             search_inference.write(best_ref+"\n")
 
-        #json.dump(hill_climb_res, open(outfile, 'w+'))
-        search_inference.close()
+        json.dump(hill_climb_res, open(outfile, 'w+'))
+        #search_inference.close()
 
         print("Hill climb results written!")
 
     def adding_missing_slotvalues_wb(self, mr_file, ref_file, outfile, num_samples=100):
 
-        search_inference = open(outfile, 'w+')
+        #search_inference = open(outfile, 'w+')
         mr_pseudoref = self.create_hillclimbing_data(mr_file, ref_file, num_samples)
         t5_data_prep = T5ScorerDataset(self.tokenizer, self.input_length, self.output_length)
 
@@ -379,9 +379,9 @@ class HillClimbing:
 
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
-            search_inference.write(best_ref+"\n")
+            #search_inference.write(best_ref+"\n")
 
-        #json.dump(hill_climb_res, open(outfile, 'w+'))
-        search_inference.close()
+        json.dump(hill_climb_res, open(outfile, 'w+'))
+        #search_inference.close()
 
         print("Hill climb results written!")

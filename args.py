@@ -26,6 +26,9 @@ def get_model_args():
     parser.add_argument('--data_variant_samples', type=int, default=420,
                         help='Number of samples for data augmentation experiments.')
 
+    parser.add_argument('--data_variant_samples_end', type=int, default=420,
+                        help='Number of samples till which we want to generate pseudo parallel samples')
+
     parser.add_argument('--is_train', action="store_true",
                         help='Trains the model if True. Puts model in eval mode if False ')
 

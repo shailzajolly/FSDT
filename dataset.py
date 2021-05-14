@@ -7,9 +7,9 @@ import torch
 
 class D2tDataset(Dataset):
     def __init__(self, tokenizer, filepath, augment_data_filepath, data_variant, data_split, data_variant_samples,
-                 num_samples, input_length, output_length, print_text=False):
+        data_variant_samples_end, num_samples, input_length, output_length, print_text=False):
 
-        self.dataset = self.read_dataset(filepath, augment_data_filepath, data_variant, data_variant_samples)[data_split]
+        self.dataset = self.read_dataset(filepath, augment_data_filepath, data_variant, data_variant_samples, data_variant_samples_end)[data_split]
         if num_samples:
             self.dataset = self.dataset.select(list(range(0, num_samples)))
         print("Split: ",data_split)
@@ -20,7 +20,7 @@ class D2tDataset(Dataset):
         self.output_length = output_length
         self.print_text = print_text
 
-    def read_dataset(self, filepath, augment_data_filepath, data_variant, data_variant_samples):
+    def read_dataset(self, filepath, augment_data_filepath, data_variant, data_variant_samples, data_variant_samples_end):
 
         dataset = {}
         raw_data = json.load(open(filepath))
@@ -29,10 +29,16 @@ class D2tDataset(Dataset):
         #For different variants of data
         if data_variant!="":
             print(f"Data variant: {data_variant} | Number of samples: {data_variant_samples}")
+            print(f"Data variant end: {data_variant} | Number of samples: {data_variant_samples_end}")
 
         augment_data = None
         if data_variant=="gen_psd_4par":
-            raw_data["test"] = raw_data["train"][data_variant_samples:]
+            if data_variant_samples_end == 0:
+                raw_data["test"] = raw_data["train"][data_variant_samples:]
+                print("Consider 99 percent of data as unlabeled")
+            raw_data["test"] = raw_data["train"][data_variant_samples:data_variant_samples_end]
+        elif data_variant=="1par":
+            raw_data["train"] = raw_data["train"][:data_variant_samples] #420 for E2E
         elif data_variant=="1par_4psd":
             augment_data = [line.strip() for line in open(augment_data_filepath, 'r')]
         elif data_variant=="1par_4psd_hc":
@@ -42,9 +48,10 @@ class D2tDataset(Dataset):
         for split in ['train', 'validation', 'test']:
             split_dict = {"mr": [], "ref": []}
             for idx, i in enumerate(raw_data[split]):
-
                 #To add pseudo-ref for 4 par
                 if data_variant=="1par_4psd" and augment_data:
+                    if idx == data_variant_samples+len(augment_data):
+                        break
                     if split=="train" and idx >= data_variant_samples:
                         i["ref"] = augment_data[idx-data_variant_samples]
 

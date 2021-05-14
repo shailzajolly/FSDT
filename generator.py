@@ -232,6 +232,7 @@ class T5FineTuner(pl.LightningModule):
                                    augment_data_filepath=self.hparams.augment_data_filepath,
                                    data_variant=self.hparams.data_variant,
                                    data_variant_samples=self.hparams.data_variant_samples,
+                                   data_variant_samples_end=self.hparams.data_variant_samples_end,
                                    data_split="train",
                                    num_samples=n_samples, input_length=self.hparams.max_input_length,
                                    output_length=self.hparams.max_output_length)
@@ -256,6 +257,7 @@ class T5FineTuner(pl.LightningModule):
                                         augment_data_filepath=self.hparams.augment_data_filepath,
                                         data_variant=self.hparams.data_variant,
                                         data_variant_samples=self.hparams.data_variant_samples,
+                                        data_variant_samples_end=self.hparams.data_variant_samples_end,
                                         data_split="validation",
                                         num_samples=n_samples, input_length=self.hparams.max_input_length,
                                         output_length=self.hparams.max_output_length)
@@ -269,6 +271,7 @@ class T5FineTuner(pl.LightningModule):
                                   augment_data_filepath=self.hparams.augment_data_filepath,
                                   data_variant=self.hparams.data_variant,
                                   data_variant_samples = self.hparams.data_variant_samples,
+                                  data_variant_samples_end=self.hparams.data_variant_samples_end,
                                   data_split="test",
                                   num_samples=n_samples, input_length=self.hparams.max_input_length,
                                   output_length=self.hparams.max_output_length)
