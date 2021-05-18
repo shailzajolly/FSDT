@@ -221,7 +221,7 @@ class HillClimbing:
 
             temp_dict["ref"] = best_ref
             hill_climb_res.append(temp_dict)
-            search_inference.write(best_ref+"\n")
+            #search_inference.write(best_ref+"\n")
 
         json.dump(hill_climb_res, open(outfile, 'w+'))
         #search_inference.close()

@@ -35,8 +35,9 @@ class D2tDataset(Dataset):
         if data_variant=="gen_psd_4par":
             if data_variant_samples_end == 0:
                 raw_data["test"] = raw_data["train"][data_variant_samples:]
-                print("Consider 99 percent of data as unlabeled")
-            raw_data["test"] = raw_data["train"][data_variant_samples:data_variant_samples_end]
+                print("Consider 99 percent of data as unlabeled: ")
+            else:
+                raw_data["test"] = raw_data["train"][data_variant_samples:data_variant_samples_end]
         elif data_variant=="1par":
             raw_data["train"] = raw_data["train"][:data_variant_samples] #420 for E2E
         elif data_variant=="1par_4psd":
